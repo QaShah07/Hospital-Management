@@ -10,16 +10,21 @@ export interface User {
 
 export interface Patient extends User {
   user: User;
+  fatherName: string;
   father_name: string;
   assigned_doctor: string;
   assigned_doctor_name?: string;
   assigned_doctor_specialization?: string;
   illness_description: string;
+  userType: 'patient';
+  name: string;
 }
 
 export interface Doctor extends User {
   user: User;
   specialization: string;
+  userType: 'doctor';
+  name: string;
 }
 
 export interface Appointment {

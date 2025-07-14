@@ -3,8 +3,8 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { RegisterFormData } from '../../types';
-import { getDoctors } from '../../utils/auth';
-import { useState, useEffect } from 'react';
+import { authAPI } from '../../services/api';
+import { useEffect } from 'react';
 
 interface RegisterFormProps {
   onSubmit: (data: RegisterFormData) => Promise<void>;
@@ -25,7 +25,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, loading })
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const doctorsList = await getDoctors();
+        const doctorsList = await authAPI.getDoctors();
         setDoctors(doctorsList);
       } catch (error) {
         console.error('Failed to fetch doctors:', error);
@@ -45,6 +45,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, loading })
       return;
     }
     
+    console.log('Form data being submitted:', formData);
     await onSubmit(formData);
   };
 
@@ -125,10 +126,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, loading })
             value={formData.assignedDoctorId || ''}
             onChange={handleChange}
             options={doctors.map(doctor => ({
-              value: doctor.id,
-              label: `Dr. ${doctor.name} - ${doctor.specialization}`
+              value: doctor.user.id.toString(),
+              label: `Dr. ${doctor.user.first_name} ${doctor.user.last_name} - ${doctor.specialization}`
             }))}
-            required
           />
           
           <div className="space-y-1">

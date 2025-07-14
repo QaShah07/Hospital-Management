@@ -42,7 +42,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         
         # Create user
         user = User.objects.create_user(
-            username=validated_data['email'],
+            username=validated_data['email'],  # Use email as username
             **validated_data
         )
         
@@ -53,7 +53,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 try:
                     assigned_doctor = Doctor.objects.get(pk=assigned_doctor_id)
                 except Doctor.DoesNotExist:
-                    pass
+                    raise serializers.ValidationError("Selected doctor does not exist")
             
             Patient.objects.create(
                 user=user,

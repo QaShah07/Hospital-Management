@@ -33,7 +33,7 @@ export const MedicationTracker: React.FC<MedicationTrackerProps> = ({ patientId 
     fetchMedications();
   }, [patientId]);
 
-  const toggleMedicationStatus = (medicationId: string) => {
+  const toggleMedicationStatus = async (medicationId: string) => {
     try {
       const medication = medications.find(med => med.id === medicationId);
       if (medication) {

@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
-import { PatientDashboard } from './components/patient/PatientDashboard';
-import { DoctorDashboard } from './components/doctor/DoctorDashboard';
+import { AppRoutes } from './routes';
 import { Header } from './components/layout/Header';
 import { Button } from './components/ui/Button';
 import { Card } from './components/ui/Card';
@@ -542,19 +541,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Header user={user} onLogout={handleLogout} />
-        <Routes>
-          <Route
-            path="/"
-            element={
-              user.userType === 'patient' ? (
-                <PatientDashboard patient={user as Patient} />
-              ) : (
-                <DoctorDashboard doctor={user as Doctor} />
-              )
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppRoutes user={user} />
       </div>
     </Router>
   );

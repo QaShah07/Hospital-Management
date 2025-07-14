@@ -23,8 +23,15 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'API request failed');
+    let errorMessage = 'API request failed';
+    try {
+      const error = await response.json();
+      console.error('API Error Response:', error);
+      errorMessage = error.message || JSON.stringify(error) || 'API request failed';
+    } catch (e) {
+      console.error('Failed to parse error response:', e);
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json();
