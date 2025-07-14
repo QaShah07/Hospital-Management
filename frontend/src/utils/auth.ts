@@ -17,16 +17,19 @@ export const login = async (formData: LoginFormData): Promise<Patient | Doctor> 
         ...user,
         userType: 'patient' as const,
         name: `${user.user.first_name} ${user.user.last_name}`,
-        fatherName: user.father_name
+        fatherName: user.father_name,
+        id: user.user.id.toString()
       };
     } else {
       return {
         ...user,
         userType: 'doctor' as const,
-        name: `${user.user.first_name} ${user.user.last_name}`
+        name: `${user.user.first_name} ${user.user.last_name}`,
+        id: user.user.id.toString()
       };
     }
   } catch (error) {
+    console.error('Login error:', error);
     throw new Error('Invalid credentials');
   }
 };
@@ -47,7 +50,7 @@ export const register = async (formData: RegisterFormData): Promise<Patient | Do
       confirm_password: formData.confirmPassword,
       ...(formData.userType === 'patient' && {
         father_name: formData.fatherName,
-        assigned_doctor_id: formData.assignedDoctorId,
+        assigned_doctor_id: formData.assignedDoctorId ? parseInt(formData.assignedDoctorId) : null,
         illness_description: formData.illnessDescription
       }),
       ...(formData.userType === 'doctor' && {
@@ -55,9 +58,13 @@ export const register = async (formData: RegisterFormData): Promise<Patient | Do
       })
     };
     
+    console.log('=== FRONTEND REGISTRATION DEBUG ===');
+    console.log('Form data received:', formData);
     console.log('Request data being sent to API:', requestData);
     
     const response = await authAPI.register(requestData);
+    console.log('API response received:', response);
+    
     const user = response.user;
     
     // Transform the response to match our interface
@@ -66,17 +73,29 @@ export const register = async (formData: RegisterFormData): Promise<Patient | Do
         ...user,
         userType: 'patient' as const,
         name: `${user.user.first_name} ${user.user.last_name}`,
-        fatherName: user.father_name
+        fatherName: user.father_name,
+        id: user.user.id.toString()
       };
     } else {
       return {
         ...user,
         userType: 'doctor' as const,
-        name: `${user.user.first_name} ${user.user.last_name}`
+        name: `${user.user.first_name} ${user.user.last_name}`,
+        id: user.user.id.toString()
       };
     }
   } catch (error) {
-    throw new Error('Registration failed');
+    console.error('=== REGISTRATION ERROR ===');
+    console.error('Error object:', error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Re-throw the original error with its message instead of generic message
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      throw new Error('Registration failed: Unknown error');
+    }
   }
 };
 

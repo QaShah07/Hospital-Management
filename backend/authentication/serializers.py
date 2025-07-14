@@ -12,7 +12,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'mobile', 'user_type', 
+        fields = ['email', 'first_name', 'last_name', 'mobile', 'user_type', 
                  'password', 'confirm_password', 'father_name', 'assigned_doctor_id', 
                  'illness_description', 'specialization']
 
@@ -30,6 +30,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             if not attrs.get('specialization'):
                 raise serializers.ValidationError("Specialization is required for doctors")
         
+        # Check if email already exists
+        if User.objects.filter(email=attrs['email']).exists():
+            raise serializers.ValidationError("A user with this email already exists")
+        
         return attrs
 
     def create(self, validated_data):
@@ -40,11 +44,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         specialization = validated_data.pop('specialization', None)
         validated_data.pop('confirm_password')
         
+        # Set username to email
+        validated_data['username'] = validated_data['email']
+        
         # Create user
-        user = User.objects.create_user(
-            username=validated_data['email'],  # Use email as username
-            **validated_data
-        )
+        user = User.objects.create_user(**validated_data)
         
         # Create patient or doctor profile
         if user.user_type == 'patient':
@@ -53,7 +57,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 try:
                     assigned_doctor = Doctor.objects.get(pk=assigned_doctor_id)
                 except Doctor.DoesNotExist:
-                    raise serializers.ValidationError("Selected doctor does not exist")
+                    pass  # Don't fail if doctor doesn't exist, just set to None
             
             Patient.objects.create(
                 user=user,

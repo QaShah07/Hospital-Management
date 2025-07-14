@@ -27,9 +27,33 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     try {
       const error = await response.json();
       console.error('API Error Response:', error);
-      errorMessage = error.message || JSON.stringify(error) || 'API request failed';
+      
+      // Handle different error formats
+      if (typeof error === 'object') {
+        if (error.detail) {
+          errorMessage = error.detail;
+        } else if (error.message) {
+          errorMessage = error.message;
+        } else if (error.error) {
+          errorMessage = error.error;
+        } else {
+          // Handle field-specific errors
+          const errorMessages = [];
+          for (const [field, messages] of Object.entries(error)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(`${field}: ${messages.join(', ')}`);
+            } else {
+              errorMessages.push(`${field}: ${messages}`);
+            }
+          }
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join('; ');
+          }
+        }
+      }
     } catch (e) {
       console.error('Failed to parse error response:', e);
+      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
     }
     throw new Error(errorMessage);
   }

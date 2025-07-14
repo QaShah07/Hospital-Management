@@ -40,7 +40,8 @@ function App() {
       setUser(user);
       setShowAuthModal(false);
     } catch (error) {
-      alert('Login failed. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -49,11 +50,16 @@ function App() {
   const handleRegister = async (data: RegisterFormData) => {
     try {
       setLoading(true);
+      console.log('Starting registration process...');
       const user = await register(data);
+      console.log('Registration successful, user:', user);
       setUser(user);
       setShowAuthModal(false);
     } catch (error) {
-      alert('Registration failed. Please try again.');
+      console.error('Registration failed in App component:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      console.error('Showing error message to user:', errorMessage);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

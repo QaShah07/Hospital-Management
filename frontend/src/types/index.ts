@@ -8,7 +8,8 @@ export interface User {
   created_at: string;
 }
 
-export interface Patient extends User {
+export interface Patient {
+  id: string;
   user: User;
   fatherName: string;
   father_name: string;
@@ -20,7 +21,8 @@ export interface Patient extends User {
   name: string;
 }
 
-export interface Doctor extends User {
+export interface Doctor {
+  id: string;
   user: User;
   specialization: string;
   userType: 'doctor';

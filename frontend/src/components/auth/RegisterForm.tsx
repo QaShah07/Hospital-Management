@@ -120,16 +120,18 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, loading })
         />
       ) : (
         <>
-          <Select
-            name="assignedDoctorId"
-            label="Select Doctor"
-            value={formData.assignedDoctorId || ''}
-            onChange={handleChange}
-            options={doctors.map(doctor => ({
-              value: doctor.user.id.toString(),
-              label: `Dr. ${doctor.user.first_name} ${doctor.user.last_name} - ${doctor.specialization}`
-            }))}
-          />
+          {doctors.length > 0 && (
+            <Select
+              name="assignedDoctorId"
+              label="Select Doctor (Optional)"
+              value={formData.assignedDoctorId || ''}
+              onChange={handleChange}
+              options={doctors.map(doctor => ({
+                value: doctor.user.id.toString(),
+                label: `Dr. ${doctor.user.first_name} ${doctor.user.last_name} - ${doctor.specialization}`
+              }))}
+            />
+          )}
           
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700">
