@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
@@ -6,7 +6,7 @@ import { AppRoutes } from './routes';
 import { Header } from './components/layout/Header';
 import { Button } from './components/ui/Button';
 import { Card } from './components/ui/Card';
-import { login, register } from './utils/auth';
+import { login, register, restoreUserSession, logout as authLogout } from './utils/auth';
 import { Patient, Doctor, LoginFormData, RegisterFormData } from './types';
 import { 
   Stethoscope, 
@@ -32,6 +32,16 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+
+  // Restore user session on app load
+  useEffect(() => {
+    const restoredUser = restoreUserSession();
+    if (restoredUser) {
+      setUser(restoredUser);
+    }
+    setInitializing(false);
+  }, []);
 
   const handleLogin = async (data: LoginFormData) => {
     try {
@@ -66,6 +76,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    authLogout();
     setUser(null);
     setAuthMode('login');
     setShowAuthModal(false);
@@ -75,6 +86,15 @@ function App() {
     setAuthMode(mode);
     setShowAuthModal(true);
   };
+
+  // Show loading spinner while initializing
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

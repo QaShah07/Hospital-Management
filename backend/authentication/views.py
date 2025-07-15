@@ -1,10 +1,11 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, PatientSerializer, DoctorSerializer
 from .models import Patient, Doctor
+import traceback
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -53,10 +54,8 @@ def register(request):
         except Exception as e:
             print("EXCEPTION during user creation:", str(e))
             print("Exception type:", type(e).__name__)
-            import traceback
-            print("Full traceback:")
             traceback.print_exc()
-            return Response({'error': 'Registration failed. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Registration failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     print("SERIALIZER VALIDATION FAILED:")
     print("Errors:", serializer.errors)
@@ -67,10 +66,15 @@ def register(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    print("Login request data:", request.data)  # Debug logging
+    print("=== LOGIN DEBUG ===")
+    print("Login request data:", request.data)
+    
     serializer = UserLoginSerializer(data=request.data)
     if serializer.is_valid():
+        print("Login serializer is valid")
         user = serializer.validated_data['user']
+        print(f"User authenticated: {user.email} ({user.user_type})")
+        
         refresh = RefreshToken.for_user(user)
         
         # Get user profile data
@@ -79,15 +83,20 @@ def login(request):
             try:
                 patient = Patient.objects.get(user=user)
                 user_data = PatientSerializer(patient).data
+                print("Patient data serialized successfully")
             except Patient.DoesNotExist:
+                print("ERROR: Patient profile not found")
                 return Response({'error': 'Patient profile not found'}, status=status.HTTP_404_NOT_FOUND)
         elif user.user_type == 'doctor':
             try:
                 doctor = Doctor.objects.get(user=user)
                 user_data = DoctorSerializer(doctor).data
+                print("Doctor data serialized successfully")
             except Doctor.DoesNotExist:
+                print("ERROR: Doctor profile not found")
                 return Response({'error': 'Doctor profile not found'}, status=status.HTTP_404_NOT_FOUND)
         
+        print("Login successful, returning response")
         return Response({
             'user': user_data,
             'tokens': {
@@ -96,12 +105,22 @@ def login(request):
             }
         })
     
-    print("Login validation errors:", serializer.errors)  # Debug logging
+    print("Login validation errors:", serializer.errors)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny])  # Changed from IsAuthenticated to AllowAny
 def get_doctors(request):
-    doctors = Doctor.objects.all()
-    serializer = DoctorSerializer(doctors, many=True)
-    return Response(serializer.data)
+    print("=== GET DOCTORS DEBUG ===")
+    print("Request user:", request.user)
+    print("Is authenticated:", request.user.is_authenticated)
+    
+    try:
+        doctors = Doctor.objects.all()
+        serializer = DoctorSerializer(doctors, many=True)
+        print(f"Found {len(doctors)} doctors")
+        return Response(serializer.data)
+    except Exception as e:
+        print("Error fetching doctors:", str(e))
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

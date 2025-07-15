@@ -6,9 +6,10 @@ export const setToken = (token: string) => localStorage.setItem('access_token', 
 export const removeToken = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
 };
 
-// API request helper
+// API request helper with improved error handling
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = getToken();
   const headers = {
@@ -17,53 +18,72 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  console.log(`Making API request to: ${API_BASE_URL}${endpoint}`);
+  console.log('Headers:', headers);
+  console.log('Options:', options);
 
-  if (!response.ok) {
-    let errorMessage = 'API request failed';
-    try {
-      const error = await response.json();
-      console.error('API Error Response:', error);
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    console.log(`Response status: ${response.status}`);
+
+    if (!response.ok) {
+      let errorMessage = 'API request failed';
+      let errorData = null;
       
-      // Handle different error formats
-      if (typeof error === 'object') {
-        if (error.detail) {
-          errorMessage = error.detail;
-        } else if (error.message) {
-          errorMessage = error.message;
-        } else if (error.error) {
-          errorMessage = error.error;
-        } else {
-          // Handle field-specific errors
-          const errorMessages = [];
-          for (const [field, messages] of Object.entries(error)) {
-            if (Array.isArray(messages)) {
-              errorMessages.push(`${field}: ${messages.join(', ')}`);
-            } else {
-              errorMessages.push(`${field}: ${messages}`);
+      try {
+        errorData = await response.json();
+        console.error('API Error Response:', errorData);
+        
+        // Handle different error formats
+        if (typeof errorData === 'object') {
+          if (errorData.detail) {
+            errorMessage = errorData.detail;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else {
+            // Handle field-specific errors
+            const errorMessages = [];
+            for (const [field, messages] of Object.entries(errorData)) {
+              if (Array.isArray(messages)) {
+                errorMessages.push(`${field}: ${messages.join(', ')}`);
+              } else {
+                errorMessages.push(`${field}: ${messages}`);
+              }
+            }
+            if (errorMessages.length > 0) {
+              errorMessage = errorMessages.join('; ');
             }
           }
-          if (errorMessages.length > 0) {
-            errorMessage = errorMessages.join('; ');
-          }
         }
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
-    } catch (e) {
-      console.error('Failed to parse error response:', e);
-      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      
+      throw new Error(errorMessage);
     }
-    throw new Error(errorMessage);
-  }
 
-  return response.json();
+    const data = await response.json();
+    console.log('API Response data:', data);
+    return data;
+  } catch (error) {
+    console.error('API Request failed:', error);
+    throw error;
+  }
 };
 
 // Authentication API
 export const authAPI = {
   login: async (data: { email: string; password: string; user_type: string }) => {
+    console.log('=== API LOGIN REQUEST ===');
+    console.log('Login data:', data);
+    
     const response = await apiRequest('/auth/login/', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -78,6 +98,9 @@ export const authAPI = {
   },
 
   register: async (data: any) => {
+    console.log('=== API REGISTER REQUEST ===');
+    console.log('Register data:', data);
+    
     const response = await apiRequest('/auth/register/', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -92,6 +115,7 @@ export const authAPI = {
   },
 
   getDoctors: async () => {
+    console.log('=== API GET DOCTORS REQUEST ===');
     return apiRequest('/auth/doctors/');
   },
 };
